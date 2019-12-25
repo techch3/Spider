@@ -1,0 +1,45 @@
+##抓取网页
+import requests
+headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36' }
+res = requests.get('https://dealer.16888.com/?tag=search&brandId=57474', headers=headers)
+hello = res.text
+##解析网页，并写入列表
+from bs4 import BeautifulSoup
+soup=BeautifulSoup(hello,'html.parser')
+select = []
+select2= []
+select3= []
+select4= []
+select5= []
+MO = []
+Address=[]
+Phone=[]
+City=[]
+Dis=[]
+for i in range(20):
+    select.append('body > div.mod-dealer.g-mt10 > div > div.dealer-box > dl:nth-child('+str(i+1)+') > dd > div > div.dealer-text > div.title > a')
+    MO.extend(soup.select(select[i]))
+    select2.append('body > div.mod-dealer.g-mt10 > div > div.dealer-box > dl:nth-child('+str(i+1)+') > dd > div > div.dealer-text > div:nth-child(4) > p')
+    Address.extend(soup.select(select2[i]))
+    select3.append('body > div.mod-dealer.g-mt10 > div > div.dealer-box > dl:nth-child('+str(i+1)+') > dd > div > div.dealer-text > div:nth-child(3) > em')
+    Phone.extend(soup.select(select3[i]))
+    select4.append('body > div.mod-dealer.g-mt10 > div > div.dealer-box > dl:nth-child('+str(i+1)+') > dd > div > div.dealer-city > p:nth-child(1)')
+    City.extend(soup.select(select4[i]))
+    select5.append('body > div.mod-dealer.g-mt10 > div > div.dealer-box > dl:nth-child('+str(i+1)+') > dd > div > div.dealer-city > p:nth-child(2)')
+    Dis.extend(soup.select(select5[i]))
+##写入Excel
+import openpyxl
+wb = openpyxl.Workbook()
+wb.sheetnames
+sheet = wb.active
+sheet.title
+sheet.title = 'DFM'
+l=len(MO)
+for i in range (l):
+    r=i+1
+    sheet.cell(row=r, column=1, value=str(MO[i]))
+    sheet.cell(row=r, column=2, value=str(Address[i]))
+    sheet.cell(row=r, column=3, value=str(Phone[i]))
+    sheet.cell(row=r, column=4, value=str(City[i]))
+    sheet.cell(row=r, column=5, value=str(Dis[i]))
+wb.save('Dealers.xlsx')
