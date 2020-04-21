@@ -1,0 +1,65 @@
+###东风本田的经销商数据收集###
+###自动模拟点击省份和城市的挑选过程###
+#导入所需要的库
+import requests  #模拟浏览器#
+import random    #随机函数#
+from bs4 import BeautifulSoup #解析网页#
+import csv      #保存csv#
+
+#生成csv文件
+def toCsv(data): 
+    with open('data.csv', 'a+', encoding='utf8', newline='') as csvfile:
+        spamwriter = csv.writer(csvfile, dialect='excel')
+        spamwriter.writerow(data)
+#爬虫代码
+def getData(): 
+    toCsv(["省份", "城市", "名称", "地址", "销售电话", "售后电话"])
+    s = requests.session()
+#模拟浏览器
+    s.headers.update({"X-Forwarded-For": "%d.%d.%d.%d" % (
+            random.randint(120, 125), random.randint(1, 200), random.randint(1, 200),
+            random.randint(1, 200))})
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML"
+                             ", like Gecko) Chrome/74.0.3729.169 Safari/537.36",
+               "Cookie":"Hm_lvt_37310e43bfa1b835033eda6c79356ab4=1584694955; IESESSION=alive; _qddaz=QD.iriwv5.i6gpxp.k7zygl7a; pgv_pvi=7490063360; pgv_si=s8797257728; tencentSig=8862944256; ASP.NET_SessionId=mftknpilqzws5e4gshz0ovwo; _qddab=3-e5gkox.k802dw9l; safedog-flow-item=; Hm_lpvt_37310e43bfa1b835033eda6c79356ab4=1584968055"}
+    query_url = 'http://www.dongfeng-honda.com/dot_query.shtml'
+    res = s.get(query_url, headers=headers)
+    print(query_url)
+    soup = BeautifulSoup(res.content, 'html.parser')
+    provinces = soup.find("select",id="province").find_all("option")[1:]
+    
+#获取所有省份信息
+    provinces_all = []
+    for province_item in provinces:
+        province = province_item.get_text()
+        province_id = province_item["province_id"]
+        city_res = s.post("http://www.dongfeng-honda.com/index/get_city_bypid/"+str(province_id),data={"dealer_type":"dot_query","ajax":"true"}, headers=headers)
+        city_soup = BeautifulSoup(city_res.content, 'html.parser')
+        cities = city_soup.find_all("option")[1:]
+        city_arr = []
+        for city_item in cities:
+            city_arr.append(city_item.get_text())
+        provinces_all.append([province,city_arr])
+        
+#获取所有城市信息    
+    for item in provinces_all:
+        for region in item[1]:
+            region_url = 'http://www.dongfeng-honda.com/dot_query.shtml?province='+str(item[0])+'&city='+str(region)
+            region_res = s.get(region_url, headers=headers)
+            region_soup = BeautifulSoup(region_res.content, 'html.parser')
+            li_list = region_soup.find("section",class_="stores").find("ul").find_all("li")
+#获取所有网点信息
+            for li_item in li_list:
+                place = li_item.find_all("p")[0].get_text()
+                name = li_item.find("h4").get_text()
+                sale_number = li_item.find_all("p")[1].get_text()
+                aftersal_number = li_item.find_all("p")[2].get_text()
+                print("省份："+item[0])
+                print("城市："+str(region))
+                print("名称："+name)
+                print("地点："+place)
+                print("销售热线："+sale_number)
+                print("售后热线："+aftersal_numbe)
+                toCsv([item[0],str(region),name,place,sale_number,aftersal_number])
+#主程序的执行
+getData()
